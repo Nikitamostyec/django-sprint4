@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "blog.apps.BlogConfig",
     "pages.apps.PagesConfig",
+    "django_bootstrap5",
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -129,3 +131,5 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
