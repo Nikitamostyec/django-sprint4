@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,9 +24,9 @@ TEMPLATES_DIR = BASE_DIR / 'templates'
 SECRET_KEY = "django-insecure-yu-jmv6^(doh$joh846v#_^uxlth8mg)9)a42auqbw*#hnm&v6"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'local_host']
 
 
 # Application definition
@@ -132,3 +131,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
+
+MEDIA_URL = "media/"
+
+MEDIA_ROOT = BASE_DIR / "media"
