@@ -112,6 +112,12 @@ class Post(TimeStampedModel):
         on_delete=models.SET_NULL,
         verbose_name='Категория'
     )
+    image = models.ImageField(
+        upload_to="posts/",
+        verbose_name="Изображение",
+        help_text="Загрузите изображение для публикации",
+        blank=True
+    )
 
     class Meta:
         verbose_name = 'публикация'

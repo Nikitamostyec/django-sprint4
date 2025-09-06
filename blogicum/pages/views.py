@@ -1,8 +1,14 @@
 from django.shortcuts import render
+from django.views.generic import CreateView
+from django.contrib.auth.forms import UserCreationForm
+from django.urls import reverse_lazy
 
 
 def csrf_failure(request, reason=''):
-    return render(request, 'pages/403csrf.html', status=403)
+    return render(request,
+                  'pages/403csrf.html',
+                  {'reason': reason},
+                  status=403)
 
 
 def page_not_found(request, exception=None):
@@ -19,3 +25,9 @@ def about(request):
 
 def rules(request):
     return render(request, "pages/rules.html")
+
+
+class RegistationView(CreateView):
+    form_class = UserCreationForm
+    template_name = "registration/registration_form.html"
+    success_url = reverse_lazy("login")

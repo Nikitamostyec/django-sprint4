@@ -15,6 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from pages import views as pages_views
+from django.conf.urls.static import static
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
@@ -22,11 +25,22 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("blog.urls", namespace="blog")),
     path("pages/", include("pages.urls", namespace="pages")),
+    path(
+        "auth/registration/",
+        pages_views.RegistationView.as_view(),
+        name="registration"
+    ),
     path('auth/', include("django.contrib.auth.urls")),
-    path('auth/', include("users.urls")),
+    
+    # path('auth/', include("users.urls")),
 
 ]
 
 
 handler404 = 'pages.views.page_not_found'
 handler500 = 'pages.views.server_error_view'
+
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT)

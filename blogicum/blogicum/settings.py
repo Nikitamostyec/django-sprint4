@@ -24,10 +24,13 @@ TEMPLATES_DIR = BASE_DIR / 'templates'
 SECRET_KEY = "django-insecure-yu-jmv6^(doh$joh846v#_^uxlth8mg)9)a42auqbw*#hnm&v6"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'local_host']
+# ALLOWED_HOSTS = ['127.0.0.1', 'local_host']
 
+DEBUG = True
+
+ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -41,7 +44,6 @@ INSTALLED_APPS = [
     "blog.apps.BlogConfig",
     "pages.apps.PagesConfig",
     "django_bootstrap5",
-    "users",
 ]
 
 MIDDLEWARE = [
@@ -135,3 +137,9 @@ CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
 MEDIA_URL = "media/"
 
 MEDIA_ROOT = BASE_DIR / "media"
+
+LOGIN_URL = "login"
+
+LOGOUT_REDIRECT_URL = "blog:index"
+
+LOGIN_REDIRECT_URL = "blog:index"

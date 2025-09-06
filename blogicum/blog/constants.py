@@ -7,3 +7,6 @@ POSTS_ON_MAIN = 5
 # Сколько символов показываем в __str__
 MAX_LENGTH_TITLE = 15
 MAX_LENGTH_NAME = 15
+
+# Количество постов на странице профиля
+POSTS_PER_PAGE = 10
