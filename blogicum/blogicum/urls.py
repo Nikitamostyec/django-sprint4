@@ -31,8 +31,6 @@ urlpatterns = [
         name="registration"
     ),
     path('auth/', include("django.contrib.auth.urls")),
-    # path('auth/', include("users.urls")),
-
 ]
 
 
