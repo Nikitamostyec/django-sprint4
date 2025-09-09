@@ -125,3 +125,34 @@ class Post(TimeStampedModel):
 
     def __str__(self):
         return self.title[:MAX_LENGTH_TITLE]
+    
+
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        verbose_name='Публикация'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор публикации',
+    )
+    text = models.TextField(
+        null=False,
+        blank=False,
+        verbose_name='Текст',
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        null=False,
+        blank=False,
+        verbose_name='Добавлено',
+    )
+
+    class Meta:
+        verbose_name = 'Коментарий',
+        verbose_name_plural = 'коментарий',
+
+    def __str__(self):
+        return self.title[:MAX_LENGTH_TITLE]
