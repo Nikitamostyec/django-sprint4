@@ -125,7 +125,7 @@ class Post(TimeStampedModel):
 
     def __str__(self):
         return self.title[:MAX_LENGTH_TITLE]
-    
+
 
 class Comment(models.Model):
     post = models.ForeignKey(

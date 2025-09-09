@@ -17,4 +17,3 @@ def get_paginated_post(request, queryset, per_page):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     return page_obj
-
