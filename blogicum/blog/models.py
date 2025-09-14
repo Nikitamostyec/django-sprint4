@@ -131,7 +131,8 @@ class Comment(models.Model):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        verbose_name='Публикация'
+        verbose_name='Публикация',
+        related_name='comments'
     )
     author = models.ForeignKey(
         User,
@@ -151,8 +152,8 @@ class Comment(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Коментарий',
-        verbose_name_plural = 'коментарий',
+        verbose_name = 'Коментарий'
+        verbose_name_plural = 'коментарий'
 
     def __str__(self):
-        return self.title[:MAX_LENGTH_TITLE]
+        return self.text[:MAX_LENGTH_TITLE]

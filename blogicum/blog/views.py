@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 
 from .constants import POSTS_ON_MAIN, POSTS_PER_PAGE
 from .models import Category, Post, Comment
@@ -10,8 +11,16 @@ from .forms import PostForm, EditUserForm, CommentForm
 
 
 def index(request):
-    posts = get_base_post()[:POSTS_ON_MAIN]
-    return render(request, "blog/index.html", {"post_list": posts})
+    qs = (
+        get_base_post()
+        .select_related('author', 'category', 'location')
+        .annotate(comment_count=Count('comments'))
+        .order_by('-pub_date')
+    )
+    page_obj = get_paginated_post(request, qs, POSTS_PER_PAGE)
+    return render(request, "blog/index.html", {'page_obj': page_obj})
+    # posts = get_base_post()[:POSTS_ON_MAIN]
+    # return render(request, "blog/index.html", {"post_list": posts})
 
 
 def post_detail(request, post_id):
@@ -22,8 +31,19 @@ def post_detail(request, post_id):
             category__is_published=True,
             pub_date__lte=timezone.now()
         )
+        .select_related('author', 'category', 'location')
     )
-    return render(request, "blog/detail.html", {"post": post})
+    comments = (
+        Comment.objects.filter(post=post)
+        .select_related('author')
+        .order_by('-created_at')
+    )
+    form = CommentForm()
+    return render(
+        request, 
+        "blog/detail.html", 
+        {"post": post, 'comments': comments, 'form': form}
+    )
 
 
 def category_posts(request, category_slug):
@@ -33,12 +53,18 @@ def category_posts(request, category_slug):
             is_published=True
         )
     )
-    post_list = get_base_post().filter(category=category)
-
+    qs = (
+        get_base_post()
+        .filter(category=category)
+        .select_related('author', 'category', 'location')
+        .annotate(comment_count=Count('comments'))
+        .order_by('-pub_date')
+    )
+    page_obj = get_paginated_post(request, qs, POSTS_PER_PAGE)
     return render(
         request,
         "blog/category.html",
-        {'category': category, 'post_list': post_list})
+        {'category': category, 'page_obj': page_obj})
 
 
 def profile(request, username):
@@ -48,15 +74,17 @@ def profile(request, username):
         qs = (Post.objects
               .filter(author=author)
               .select_related('author', 'category', 'location')
+              .annotate(comment_count=Count('comments'))
               .order_by('-pub_date'))
     else:
         qs = (get_base_post()
               .filter(author=author)
-              .select_related('author', 'category', 'location'))
+              .select_related('author', 'category', 'location')
+              .annotate(comment_count=Count('comments'))
+              )
     page_obj = get_paginated_post(request, qs, POSTS_PER_PAGE)
     context = {
         'author': author,
-        'post_list': page_obj,
         'is_owner': is_owner,
         'page_obj': page_obj,
         'profile': author,
@@ -64,18 +92,19 @@ def profile(request, username):
     return render(request, 'blog/profile.html', context)
 
 
+@login_required
 def edit_profile(request):
-    Form = EditUserForm()
     if request.method == 'POST':
-        form = Form(request.POST, instance=request.user)
+        form = EditUserForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            return redirect('blog:profile')
+            return redirect('blog:profile', username=request.user.username)
     else:
-        form = Form(instance=request.user)
+        form = EditUserForm(instance=request.user)
     return render(request, 'blog/user.html', {'form': form})
 
 
+@login_required
 def create_post(request):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
@@ -89,6 +118,7 @@ def create_post(request):
     return render(request, 'blog/create.html', {'form': form})
 
 
+@login_required
 def edit_post(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
@@ -97,34 +127,42 @@ def edit_post(request, post_id):
         form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
             form.save()
-            return redirect('blog:post_detail')
+            return redirect('blog:post_detail', post_id=post.id)
     else:
         form = PostForm(instance=post)
-    return render(request, 'blog/create.html', {'form', form})
+    return render(request, 'blog/create.html', {'form': form})
 
 
+@login_required
 def delete_post(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
-        return redirect('blog:post_detail')
+        return redirect('blog:post_detail', post_id=post.id)
     if request.method == 'POST':
         post.delete()
-        return redirect('blog:profile')
+        return redirect('blog:profile', username=request.user.username)
     return render(request, 'blog/create.html', {'post': post,
                                                 'is_delete': True})
 
 
 @login_required
 def add_comment(request, post_id):
-    post = get_object_or_404(Post.objects, pk=post_id)
-    form = CommentForm(request.POST)
-    if form.is_valid():
+    post = get_object_or_404(Post, pk=post_id)
+    form = CommentForm(request.POST or None)
+    if form.is_valid() and request.method == 'POST':
         comment = form.save(commit=False)
         comment.post = post
         comment.author = request.user
         comment.save()
-        return redirect('blog:comment', post_id=post_id)
-    return render(request, "blog/comment.html", {'post': post, 'form': form})
+        return redirect('blog:post_detail', post_id=post_id)
+    comments = (
+        Comment.objects.filter(post=post)
+        .select_related('author')
+        .order_by('-created_at')
+    )
+    return render(request,
+                  "blog/detail.html",
+                  {'post': post, 'form': form, 'comments': comments})
 
 
 @login_required

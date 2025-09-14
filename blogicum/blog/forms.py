@@ -29,8 +29,6 @@ class EditUserForm(forms.ModelForm):
 
 
 class CommentForm(forms.ModelForm):
-    class Mets:
+    class Meta:
         model = Comment
-        fields = (
-            'text'
-        )
+        fields = ('text',)
