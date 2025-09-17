@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import CreateView
+from django.views.generic import CreateView, TemplateView
 from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse_lazy
 
@@ -19,15 +19,23 @@ def server_error_view(request):
     return render(request, 'pages/500.html', status=500)
 
 
-def about(request):
-    return render(request, "pages/about.html")
+# def about(request):
+#     return render(request, "pages/about.html")
 
 
-def rules(request):
-    return render(request, "pages/rules.html")
+# def rules(request):
+#     return render(request, "pages/rules.html")
 
 
 class RegistationView(CreateView):
     form_class = UserCreationForm
     template_name = "registration/registration_form.html"
     success_url = reverse_lazy("login")
+
+
+class AboutPageView(TemplateView):
+    template_name = "pages/about.html"
+
+
+class RulesPageView(TemplateView):
+    template_name = "pages/rules.html"

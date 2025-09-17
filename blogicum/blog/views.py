@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
+from django.urls import reverse
 
 from .constants import POSTS_ON_MAIN, POSTS_PER_PAGE
 from .models import Category, Post, Comment
@@ -154,7 +155,8 @@ def add_comment(request, post_id):
         comment.post = post
         comment.author = request.user
         comment.save()
-        return redirect('blog:post_detail', post_id=post_id)
+        url = reverse('blog:post_detail', kwargs={'post_id': post.id})
+        return redirect(f'{url}#comment_{comment.id}')
     comments = (
         Comment.objects.filter(post=post)
         .select_related('author')
