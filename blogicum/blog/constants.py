@@ -2,7 +2,7 @@
 MAX_LENGTH = 256
 
 # Сколько постов выводится на главной странице
-POSTS_ON_MAIN = 5
+POSTS_ON_MAIN = 10
 
 # Сколько символов показываем в __str__
 MAX_LENGTH_TITLE = 15

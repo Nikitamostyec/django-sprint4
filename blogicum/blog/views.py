@@ -18,7 +18,7 @@ def index(request):
         .annotate(comment_count=Count('comments'))
         .order_by('-pub_date')
     )
-    page_obj = get_paginated_post(request, qs, POSTS_PER_PAGE)
+    page_obj = get_paginated_post(request, qs, POSTS_ON_MAIN)
     return render(request, "blog/index.html", {'page_obj': page_obj})
     # posts = get_base_post()[:POSTS_ON_MAIN]
     # return render(request, "blog/index.html", {"post_list": posts})
@@ -41,8 +41,8 @@ def post_detail(request, post_id):
     )
     form = CommentForm()
     return render(
-        request, 
-        "blog/detail.html", 
+        request,
+        "blog/detail.html",
         {"post": post, 'comments': comments, 'form': form}
     )
 
