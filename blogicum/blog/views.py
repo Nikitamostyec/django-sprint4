@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.urls import reverse
+from django.http import Http404
 
 from .constants import POSTS_ON_MAIN, POSTS_PER_PAGE
 from .models import Category, Post, Comment
@@ -25,19 +26,27 @@ def index(request):
 
 
 def post_detail(request, post_id):
-    post = get_object_or_404(
-        Post.objects.filter(
+    # Сначала пытаемся найти опубликованный пост
+    post = Post.objects.filter(
+        id=post_id,
+        is_published=True,
+        category__is_published=True,
+        pub_date__lte=timezone.now()
+    ).select_related('author', 'category', 'location').first()
+    
+    # Если не найден опубликованный пост, проверяем, может ли автор видеть свой неопубликованный пост
+    if not post and request.user.is_authenticated:
+        post = Post.objects.filter(
             id=post_id,
-            is_published=True,
-            category__is_published=True,
-            pub_date__lte=timezone.now()
-        )
-        .select_related('author', 'category', 'location')
-    )
+            author=request.user
+        ).select_related('author', 'category', 'location').first()
+    
+    if not post:
+        raise Http404
     comments = (
         Comment.objects.filter(post=post)
         .select_related('author')
-        .order_by('-created_at')
+        .order_by('created_at')
     )
     form = CommentForm()
     return render(
@@ -160,7 +169,7 @@ def add_comment(request, post_id):
     comments = (
         Comment.objects.filter(post=post)
         .select_related('author')
-        .order_by('-created_at')
+        .order_by('created_at')
     )
     return render(request,
                   "blog/detail.html",
@@ -172,7 +181,7 @@ def edit_comment(request, post_id, comment_id):
     post = get_object_or_404(Post, pk=post_id)
     comment = get_object_or_404(Comment, pk=comment_id, post=post)
     if request.user != comment.author:
-        return redirect('pages:404')
+        raise Http404
     if request.method == 'POST':
         form = CommentForm(request.POST, instance=comment)
         if form.is_valid():
@@ -191,7 +200,7 @@ def delete_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id, post=post)
 
     if request.user != comment.author:
-        return redirect('pages:404')
+        raise Http404
 
     if request.method == 'POST':
         comment.delete()

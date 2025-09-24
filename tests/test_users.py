@@ -164,6 +164,7 @@ def test_profile(
             f"{old_prop_value} edited"
         )
     }
+    
     _test_edit(
         KeyVal(edit_url, edit_url),
         UserModelAdapter,

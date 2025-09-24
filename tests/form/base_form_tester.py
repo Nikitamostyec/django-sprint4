@@ -90,7 +90,13 @@ class BaseFormTester(BaseTester):
 
         soup = bs4.BeautifulSoup(response.content, features="html.parser")
 
-        form_tag = soup.find("form")
+        # Ищем форму в основном контенте, если нет, то в header
+        main_content = soup.find("main")
+        if main_content:
+            form_tag = main_content.find("form")
+        else:
+            form_tag = soup.find("form")
+        
         if not form_tag:
             raise FormTagMissingException()
 
