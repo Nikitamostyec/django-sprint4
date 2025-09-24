@@ -26,7 +26,6 @@ def index(request):
 
 
 def post_detail(request, post_id):
-    # Сначала пытаемся найти опубликованный пост
     post = Post.objects.filter(
         id=post_id,
         is_published=True,
