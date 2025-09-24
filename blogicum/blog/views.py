@@ -33,14 +33,14 @@ def post_detail(request, post_id):
         category__is_published=True,
         pub_date__lte=timezone.now()
     ).select_related('author', 'category', 'location').first()
-    
-    # Если не найден опубликованный пост, проверяем, может ли автор видеть свой неопубликованный пост
+
+    # Если не найден опубликованный пост
     if not post and request.user.is_authenticated:
         post = Post.objects.filter(
             id=post_id,
             author=request.user
         ).select_related('author', 'category', 'location').first()
-    
+
     if not post:
         raise Http404
     comments = (
