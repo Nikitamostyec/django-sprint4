@@ -23,7 +23,7 @@ def get_paginated_post(request, queryset, per_page):
 
 
 def get_post_queryset():
-    """Возвращает оптимизированный queryset постов с select_related и annotate."""
+    """Возвращает оптимизированный queryset постов"""
     return Post.objects.select_related('author',
                                        'category',
                                        'location').annotate(
@@ -47,7 +47,7 @@ def get_post_for_detail(post_id, user=None):
         category__is_published=True,
         pub_date__lte=timezone.now()
     ).first()
-    
+
     # Если не найден опубликованный пост и пользователь авторизован,
     # проверяем, может ли он видеть свой неопубликованный пост
     if not post and user and user.is_authenticated:
@@ -55,7 +55,7 @@ def get_post_for_detail(post_id, user=None):
             id=post_id,
             author=user
         ).first()
-    
+
     return post
 
 

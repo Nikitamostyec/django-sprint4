@@ -2,13 +2,15 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count
 from django.urls import reverse
 from django.http import Http404
 
 from .constants import POSTS_ON_MAIN, POSTS_PER_PAGE
 from .models import Category, Post, Comment
-from .utils import get_base_post, get_paginated_post, get_post_queryset, optimize_post_queryset
+from .utils import (get_base_post,
+                    get_paginated_post,
+                    get_post_queryset,
+                    optimize_post_queryset)
 from .forms import PostForm, EditUserForm, CommentForm
 
 
