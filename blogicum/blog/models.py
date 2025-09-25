@@ -7,6 +7,7 @@ User = get_user_model()
 
 
 class TimeStampedModel(models.Model):
+    """Базовый класс для моделей с временными метками и статусом публикации."""
     is_published = models.BooleanField(
         default=True,
         null=False,
@@ -26,6 +27,7 @@ class TimeStampedModel(models.Model):
 
 
 class Category(TimeStampedModel):
+    """Модель категории постов."""
     title = models.CharField(
         max_length=MAX_LENGTH,
         null=False,
@@ -57,6 +59,7 @@ class Category(TimeStampedModel):
 
 
 class Location(TimeStampedModel):
+    """Модель локации постов."""
     name = models.CharField(
         max_length=MAX_LENGTH,
         null=False,
@@ -73,6 +76,7 @@ class Location(TimeStampedModel):
 
 
 class Post(TimeStampedModel):
+    """Модель поста блога."""
     title = models.CharField(
         max_length=MAX_LENGTH,
         null=False,
@@ -128,6 +132,7 @@ class Post(TimeStampedModel):
 
 
 class Comment(models.Model):
+    """Модель комментария к посту."""
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,

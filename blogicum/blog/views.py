@@ -8,30 +8,19 @@ from django.http import Http404
 
 from .constants import POSTS_ON_MAIN, POSTS_PER_PAGE
 from .models import Category, Post, Comment
-from .utils import get_base_post, get_paginated_post
+from .utils import get_base_post, get_paginated_post, get_post_queryset, optimize_post_queryset
 from .forms import PostForm, EditUserForm, CommentForm
 
 
-def get_post_queryset():
-    return Post.objects.select_related('author',
-                                       'category',
-                                       'location').annotate(
-                                           comment_count=Count('comments')
-    )
-
-
 def index(request):
-    qs = (
-        get_base_post()
-        .select_related('author', 'category', 'location')
-        .annotate(comment_count=Count('comments'))
-        .order_by('-pub_date')
-    )
+    """Главная страница с опубликованными постами."""
+    qs = optimize_post_queryset(get_base_post()).order_by('-pub_date')
     page_obj = get_paginated_post(request, qs, POSTS_ON_MAIN)
     return render(request, "blog/index.html", {'page_obj': page_obj})
 
 
 def post_detail(request, post_id):
+    """Детальная страница поста с комментариями."""
     post = get_post_queryset().filter(
         id=post_id,
         is_published=True,
@@ -62,19 +51,16 @@ def post_detail(request, post_id):
 
 
 def category_posts(request, category_slug):
+    """Страница постов определенной категории."""
     category = get_object_or_404(
         Category.objects.filter(
             slug=category_slug,
             is_published=True
         )
     )
-    qs = (
-        get_base_post()
-        .filter(category=category)
-        .select_related('author', 'category', 'location')
-        .annotate(comment_count=Count('comments'))
-        .order_by('-pub_date')
-    )
+    qs = optimize_post_queryset(
+        get_base_post().filter(category=category)
+    ).order_by('-pub_date')
     page_obj = get_paginated_post(request, qs, POSTS_PER_PAGE)
     return render(
         request,
@@ -83,6 +69,7 @@ def category_posts(request, category_slug):
 
 
 def profile(request, username):
+    """Страница профиля пользователя с его постами."""
     author = get_object_or_404(get_user_model(), username=username)
     is_owner = request.user.is_authenticated and request.user == author
     if is_owner:
@@ -90,11 +77,9 @@ def profile(request, username):
               .filter(author=author)
               .order_by('-pub_date'))
     else:
-        qs = (get_base_post()
-              .filter(author=author)
-              .select_related('author', 'category', 'location')
-              .annotate(comment_count=Count('comments'))
-              )
+        qs = optimize_post_queryset(
+            get_base_post().filter(author=author)
+        )
     page_obj = get_paginated_post(request, qs, POSTS_PER_PAGE)
     context = {
         'author': author,
@@ -107,37 +92,34 @@ def profile(request, username):
 
 @login_required
 def edit_profile(request):
-    if request.method == 'POST':
-        form = EditUserForm(request.POST or None, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('blog:profile', username=request.user.username)
-    else:
-        form = EditUserForm(instance=request.user)
+    """Редактирование профиля пользователя."""
+    form = EditUserForm(request.POST or None, instance=request.user)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('blog:profile', username=request.user.username)
     return render(request, 'blog/user.html', {'form': form})
 
 
 @login_required
 def create_post(request):
-    if request.method == 'POST':
-        form = PostForm(request.POST or None, request.FILES)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.save()
-            return redirect('blog:profile', username=request.user.username)
-    else:
-        form = PostForm()
+    """Создание нового поста."""
+    form = PostForm(request.POST or None, request.FILES)
+    if request.method == 'POST' and form.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect('blog:profile', username=request.user.username)
     return render(request, 'blog/create.html', {'form': form})
 
 
 @login_required
 def edit_post(request, post_id):
+    """Редактирование существующего поста."""
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
         return redirect('blog:post_detail', post_id=post_id)
     if request.method == 'POST':
-        form = PostForm(request.POST or None, request.FILES, instance=post)
+        form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
             form.save()
             return redirect('blog:post_detail', post_id=post.id)
@@ -148,6 +130,7 @@ def edit_post(request, post_id):
 
 @login_required
 def delete_post(request, post_id):
+    """Удаление поста."""
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
         return redirect('blog:post_detail', post_id=post.id)
@@ -159,6 +142,7 @@ def delete_post(request, post_id):
 
 @login_required
 def add_comment(request, post_id):
+    """Добавление комментария к посту."""
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm(request.POST or None)
     if form.is_valid() and request.method == 'POST':
@@ -180,17 +164,15 @@ def add_comment(request, post_id):
 
 @login_required
 def edit_comment(request, post_id, comment_id):
+    """Редактирование комментария."""
     post = get_object_or_404(Post, pk=post_id)
     comment = get_object_or_404(Comment, pk=comment_id, post=post)
     if request.user != comment.author:
         raise Http404
-    if request.method == 'POST':
-        form = CommentForm(request.POST or None, instance=comment)
-        if form.is_valid():
-            form.save()
-            return redirect('blog:post_detail', post_id=post.id)
-    else:
-        form = CommentForm(instance=comment)
+    form = CommentForm(request.POST or None, instance=comment)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('blog:post_detail', post_id=post.id)
     return render(request, 'blog/comment.html', {'form': form,
                                                  'comment': comment,
                                                  'post': post})
@@ -198,6 +180,7 @@ def edit_comment(request, post_id, comment_id):
 
 @login_required
 def delete_comment(request, post_id, comment_id):
+    """Удаление комментария."""
     post = get_object_or_404(Post, pk=post_id)
     comment = get_object_or_404(Comment, pk=comment_id, post=post)
 
