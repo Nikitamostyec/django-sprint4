@@ -12,6 +12,14 @@ from .utils import get_base_post, get_paginated_post
 from .forms import PostForm, EditUserForm, CommentForm
 
 
+def get_post_queryset():
+    return Post.objects.select_related('author',
+                                       'category',
+                                       'location').annotate(
+                                           comment_count=Count('comments')
+    )
+
+
 def index(request):
     qs = (
         get_base_post()
@@ -21,24 +29,22 @@ def index(request):
     )
     page_obj = get_paginated_post(request, qs, POSTS_ON_MAIN)
     return render(request, "blog/index.html", {'page_obj': page_obj})
-    # posts = get_base_post()[:POSTS_ON_MAIN]
-    # return render(request, "blog/index.html", {"post_list": posts})
 
 
 def post_detail(request, post_id):
-    post = Post.objects.filter(
+    post = get_post_queryset().filter(
         id=post_id,
         is_published=True,
         category__is_published=True,
         pub_date__lte=timezone.now()
-    ).select_related('author', 'category', 'location').first()
+    ).first()
 
     # Если не найден опубликованный пост
     if not post and request.user.is_authenticated:
-        post = Post.objects.filter(
+        post = get_post_queryset().filter(
             id=post_id,
             author=request.user
-        ).select_related('author', 'category', 'location').first()
+        ).first()
 
     if not post:
         raise Http404
@@ -80,10 +86,8 @@ def profile(request, username):
     author = get_object_or_404(get_user_model(), username=username)
     is_owner = request.user.is_authenticated and request.user == author
     if is_owner:
-        qs = (Post.objects
+        qs = (get_post_queryset()
               .filter(author=author)
-              .select_related('author', 'category', 'location')
-              .annotate(comment_count=Count('comments'))
               .order_by('-pub_date'))
     else:
         qs = (get_base_post()
@@ -104,7 +108,7 @@ def profile(request, username):
 @login_required
 def edit_profile(request):
     if request.method == 'POST':
-        form = EditUserForm(request.POST, instance=request.user)
+        form = EditUserForm(request.POST or None, instance=request.user)
         if form.is_valid():
             form.save()
             return redirect('blog:profile', username=request.user.username)
@@ -116,7 +120,7 @@ def edit_profile(request):
 @login_required
 def create_post(request):
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES)
+        form = PostForm(request.POST or None, request.FILES)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
@@ -133,7 +137,7 @@ def edit_post(request, post_id):
     if post.author != request.user:
         return redirect('blog:post_detail', post_id=post_id)
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, instance=post)
+        form = PostForm(request.POST or None, request.FILES, instance=post)
         if form.is_valid():
             form.save()
             return redirect('blog:post_detail', post_id=post.id)
@@ -150,8 +154,7 @@ def delete_post(request, post_id):
     if request.method == 'POST':
         post.delete()
         return redirect('blog:profile', username=request.user.username)
-    return render(request, 'blog/create.html', {'post': post,
-                                                'is_delete': True})
+    return redirect('blog:create_post')
 
 
 @login_required
@@ -182,7 +185,7 @@ def edit_comment(request, post_id, comment_id):
     if request.user != comment.author:
         raise Http404
     if request.method == 'POST':
-        form = CommentForm(request.POST, instance=comment)
+        form = CommentForm(request.POST or None, instance=comment)
         if form.is_valid():
             form.save()
             return redirect('blog:post_detail', post_id=post.id)
@@ -207,10 +210,3 @@ def delete_comment(request, post_id, comment_id):
 
     return render(request, 'blog/comment.html', {'comment': comment,
                                                  'post': post})
-
-
-def post_list(request):
-    posts = Post.objects.all()
-    for post in posts:
-        post.comment_count = post.comments.count()
-    return render(request, 'blog/comment.html', {'posts': posts})

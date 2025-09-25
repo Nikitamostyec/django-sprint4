@@ -1,7 +1,7 @@
-from .models import Post
-
 from django.utils import timezone
 from django.core.paginator import Paginator
+
+from .models import Post
 
 
 def get_base_post():

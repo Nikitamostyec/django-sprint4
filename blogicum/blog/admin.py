@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Location, Post
+from .models import Category, Location, Post, Comment
 
 
 @admin.register(Category)
@@ -26,3 +26,15 @@ class PostAdmin(admin.ModelAdmin):
         'pub_date')
     list_filter = ('is_published', 'location', 'category')
     date_hierarchy = 'pub_date'
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('author',
+                    'post',
+                    'text',
+                    'created_at',
+                    'is_approved')
+    list_filter = ('is_approved', 'post', 'author')
+    search_fields = ('text', 'author__username', 'post__title')
+    date_hierarchy = 'created_at'
