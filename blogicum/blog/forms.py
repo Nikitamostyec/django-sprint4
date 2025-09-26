@@ -15,6 +15,9 @@ class PostForm(forms.ModelForm):
             'category',
             'image',
         )
+        widgets = {
+            'text': forms.Textarea(),
+        }
 
 
 class EditUserForm(forms.ModelForm):

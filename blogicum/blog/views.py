@@ -10,7 +10,8 @@ from .models import Category, Post, Comment
 from .utils import (get_base_post,
                     get_paginated_post,
                     get_post_queryset,
-                    optimize_post_queryset)
+                    optimize_post_queryset,
+                    get_post_comments)
 from .forms import PostForm, EditUserForm, CommentForm
 
 
@@ -120,13 +121,10 @@ def edit_post(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
         return redirect('blog:post_detail', post_id=post_id)
-    if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES, instance=post)
-        if form.is_valid():
-            form.save()
-            return redirect('blog:post_detail', post_id=post.id)
-    else:
-        form = PostForm(instance=post)
+    form = PostForm(request.POST or None, request.FILES or None, instance=post)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('blog:post_detail', post_id=post.id)
     return render(request, 'blog/create.html', {'form': form})
 
 
@@ -154,11 +152,7 @@ def add_comment(request, post_id):
         comment.save()
         url = reverse('blog:post_detail', kwargs={'post_id': post.id})
         return redirect(f'{url}#comment_{comment.id}')
-    comments = (
-        Comment.objects.filter(post=post)
-        .select_related('author')
-        .order_by('created_at')
-    )
+    comments = get_post_comments(post)
     return render(request,
                   "blog/detail.html",
                   {'post': post, 'form': form, 'comments': comments})
@@ -191,7 +185,7 @@ def delete_comment(request, post_id, comment_id):
 
     if request.method == 'POST':
         comment.delete()
-        return redirect('blog:post_detail', post_id=post.id)
+        return redirect('blog:add_comment', post_id=post.id)
 
     return render(request, 'blog/comment.html', {'comment': comment,
                                                  'post': post})
