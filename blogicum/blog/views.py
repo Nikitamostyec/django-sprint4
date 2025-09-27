@@ -185,7 +185,7 @@ def delete_comment(request, post_id, comment_id):
 
     if request.method == 'POST':
         comment.delete()
-        return redirect('blog:add_comment', post_id=post.id)
+        return redirect('blog:post_detail', post_id=post.id)
 
     return render(request, 'blog/comment.html', {'comment': comment,
                                                  'post': post})
