@@ -38,27 +38,6 @@ def optimize_post_queryset(queryset):
     )
 
 
-# def get_post_for_detail(post_id, user=None):
-#     """Получает пост для детального просмотра с учетом прав доступа."""
-#     # Сначала пытаемся найти опубликованный пост
-#     post = get_post_queryset().filter(
-#         id=post_id,
-#         is_published=True,
-#         category__is_published=True,
-#         pub_date__lte=timezone.now()
-#     ).first()
-
-#     # Если не найден опубликованный пост и пользователь авторизован,
-#     # проверяем, может ли он видеть свой неопубликованный пост
-#     if not post and user and user.is_authenticated:
-#         post = get_post_queryset().filter(
-#             id=post_id,
-#             author=user
-#         ).first()
-
-    # return post
-
-
 def get_post_comments(post):
     """Получает комментарии к посту с оптимизацией."""
     return (
